@@ -1,13 +1,4 @@
 
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/batches.meta
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_1
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_2
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_3
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_4
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_5
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/readme.html
-Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/test_batch
+Assignment/assignment1/cs231n/datasets/cifar-10-batches-py/*
 *.pyc
-Assignment/assignment1/.ipynb_checkpoints/Untitled1-checkpoint.ipynb
-Assignment/assignment1/.ipynb_checkpoints/knn-checkpoint.ipynb
-Assignment/assignment1/.ipynb_checkpoints/Untitled-checkpoint.ipynb
+Assignment/assignment1/.ipynb_checkpoints/*
