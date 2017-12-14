@@ -26,15 +26,18 @@ def svm_loss_naive(W, X, y, reg):
   num_classes = W.shape[1]
   num_train = X.shape[0]
   loss = 0.0
+  #计算num_train个case的loss并累加
   for i in range(num_train):		# xrange
     scores = X[i].dot(W)
-    correct_class_score = scores[y[i]]
+    correct_class_score = scores[y[i]]	# 即classifier在正确分类上的得分
     for j in range(num_classes):	# xrange
       if j == y[i]:
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
+      
+      # 先不考虑正则化项
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
