@@ -27,25 +27,25 @@ def svm_loss_naive(W, X, y, reg):
   num_train = X.shape[0]
   loss = 0.0
   #计算num_train个case的loss并累加
-  for i in range(num_train):		# xrange
+  for i in range(num_train):           # 对于每个训练数据
     scores = X[i].dot(W)
-    correct_class_score = scores[y[i]]	# 即classifier在正确分类上的得分
-    for j in range(num_classes):	# xrange
-      if j == y[i]:
+    correct_class_score = scores[y[i]]  # 即classifier在正确分类上的得分
+    for j in range(num_classes):       # 每次迭代更新 dW 一列
+      if j == y[i]:                    # 此次不用更新
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
-      if margin > 0:
+      if margin > 0:                   # dW需要更新
         loss += margin
-      
-      # 先不考虑正则化项
-
+        dW[:, j] += X[i, :].T                 
+        dW[:, y[i]] -= X[i, :].T       # 不要忘记那个减去的y[i]
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
+  dW /= num_train
 
   # Add regularization to the loss.
   loss += reg * np.sum(W * W)
-
+  dW += 2*reg*W
   #############################################################################
   # TODO:                                                                     #
   # Compute the gradient of the loss function and store it dW.                #
@@ -55,14 +55,12 @@ def svm_loss_naive(W, X, y, reg):
   # code above to compute the gradient.                                       #
   #############################################################################
 
-
   return loss, dW
 
 
 def svm_loss_vectorized(W, X, y, reg):
   """
   Structured SVM loss function, vectorized implementation.
-
   Inputs and outputs are the same as svm_loss_naive.
   """
   loss = 0.0
@@ -73,11 +71,14 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
-
+  Y = X.dot(W)   # N*C, 每一行是一个case的各项得分
+  y_score = Y[np.arange(Y.shape[0]), y]
+  y_score = np.reshape(y_score, (Y.shape[0] ,1))
+  Y = Y - y_score + 1
+  Y[np.arange(Y.shape[0]), y] -= 1
+  Y[Y<0] = 0
+  loss = np.sum(Y)/Y.shape[0]
+  loss = loss + reg * np.sum(W * W)
 
   #############################################################################
   # TODO:                                                                     #
@@ -88,9 +89,8 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
-
+  Y[Y>0] = 1
+  row_sum = np.sum(Y, axis = 1)  # 用于计算是否需要减去那个y[i]
+  Y[np.arange(Y.shape[0]), y] = -row_sum
+  dW = np.dot(X.T, Y)/Y.shape[0] + 2 * reg * W
   return loss, dW

@@ -30,11 +30,18 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
-  #############################################################################
-  #                          END OF YOUR CODE                                 #
-  #############################################################################
-
+  for i in range(X.shape[0]):
+    tmp_score = np.exp(X[i].dot(W))
+    score = tmp_score/np.sum(tmp_score)
+    loss +=  -np.log(score[y[i]])
+	
+    for j in range(W.shape[1]):
+      if j==y[i]:
+        dW[:, y[i]] -= X[i].T * (np.sum(tmp_score)-tmp_score[y[i]])/np.sum(tmp_score)
+      else:
+        dW[:, j] += X[i].T * tmp_score[j] / np.sum(tmp_score)
+  loss = loss / X.shape[0] + 0.5*reg*np.sum(W*W)
+  dW = dW / X.shape[0] + reg*W
   return loss, dW
 
 
@@ -54,10 +61,17 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
-  #############################################################################
-  #                          END OF YOUR CODE                                 #
-  #############################################################################
-
+  tmp = np.exp(X.dot(W))
+  sum = np.sum(tmp, axis = 1)
+  sum = np.reshape(sum, (sum.shape[0], 1))
+  score = tmp/sum;
+  loss = np.sum(-np.log(score[np.arange(score.shape[0]), y]))/X.shape[0]
+  loss = loss + 0.5*reg*np.sum(W*W)
+  
+  sum_mask = np.zeros((X.shape[0], W.shape[1]))
+  sum_mask[np.arange(X.shape[0]), y] = np.reshape(sum, (sum.shape[0], ))
+  dW = X.T.dot(-(sum_mask - tmp)/sum)
+  dW = dW / X.shape[0] + reg*W
+  
   return loss, dW
 
