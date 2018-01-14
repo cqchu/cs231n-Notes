@@ -1,5 +1,4 @@
 from __future__ import print_function
-from past.builtins import xrange
 
 import matplotlib
 import numpy as np
@@ -44,7 +43,7 @@ def extract_features(imgs, feature_fns, verbose=False):
   imgs_features[0] = np.hstack(first_image_features).T
 
   # Extract features for the rest of the images.
-  for i in xrange(1, num_images):
+  for i in range(1, num_images):
     idx = 0
     for feature_fn, feature_dim in zip(feature_fns, feature_dims):
       next_idx = idx + feature_dim

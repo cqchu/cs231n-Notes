@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
-from past.builtins import xrange
 
 class TwoLayerNet(object):
   """
@@ -76,10 +75,11 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
+    z1 = X.dot(W1) + b1
+    # ReLU
+    a1 = np.where(z1 > 0, z1, np.zeros(z1.shape))
+    z2 = a1.dot(W2) + b2
+    scores = z2 # is not softmax
     
     # If the targets are not given then jump out, we're done
     if y is None:
@@ -93,11 +93,13 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
-
+    # softmax
+    z2_exp = np.exp(z2)
+    z2_exp_sum = np.reshape(np.sum(z2_exp, axis = 1), (z2_exp.shape[0], 1))
+    scores = z2_exp / z2_exp_sum
+    y_scores = scores[np.arange(scores.shape[0]), y]
+    loss = np.sum(-np.log(y_scores))/y_scores.shape[0] + reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+    
     # Backward pass: compute gradients
     grads = {}
     #############################################################################
@@ -105,10 +107,9 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
+    dL_dS = np.reshape((-1 / y_scores) / N, (y_scores.shape[0], 1))
+    dL_da2 = dL_dS * np.where(scores == y, np.ones(scores.shape), np.zeros(scores.shape))
+    dl_dz2 = 
 
     return loss, grads
 
@@ -141,7 +142,7 @@ class TwoLayerNet(object):
     train_acc_history = []
     val_acc_history = []
 
-    for it in xrange(num_iters):
+    for it in range(num_iters):
       X_batch = None
       y_batch = None
 
