@@ -57,33 +57,25 @@ def extract_features(imgs, feature_fns, verbose=False):
 
 def rgb2gray(rgb):
   """Convert RGB image to grayscale
-
     Parameters:
       rgb : RGB image
-
     Returns:
       gray : grayscale image
-  
   """
   return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
 
 
 def hog_feature(im):
   """Compute Histogram of Gradient (HOG) feature for an image
-  
        Modified from skimage.feature.hog
        http://pydoc.net/Python/scikits-image/0.4.2/skimage.feature.hog
-     
      Reference:
        Histograms of Oriented Gradients for Human Detection
        Navneet Dalal and Bill Triggs, CVPR 2005
-     
     Parameters:
       im : an input grayscale or rgb image
-      
     Returns:
       feat: Histogram of Gradient (HOG) feature
-    
   """
   
   # convert rgb to grayscale if needed
@@ -117,7 +109,7 @@ def hog_feature(im):
     # select magnitudes for those orientations
     cond2 = temp_ori > 0
     temp_mag = np.where(cond2, grad_mag, 0)
-    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[cx/2::cx, cy/2::cy].T
+    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[int(cx/2)::cx, int(cy/2)::cy].T
   
   return orientation_histogram.ravel()
 
@@ -125,14 +117,12 @@ def hog_feature(im):
 def color_histogram_hsv(im, nbin=10, xmin=0, xmax=255, normalized=True):
   """
   Compute color histogram for an image using hue.
-
   Inputs:
   - im: H x W x C array of pixel data for an RGB image.
   - nbin: Number of histogram bins. (default: 10)
   - xmin: Minimum pixel value (default: 0)
   - xmax: Maximum pixel value (default: 255)
   - normalized: Whether to normalize the histogram (default: True)
-
   Returns:
     1D vector of length nbin giving the color histogram over the hue of the
     input image.

@@ -69,24 +69,20 @@ class TwoLayerNet(object):
     N, D = X.shape
 
     # Compute the forward pass
-    scores = None
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
     z1 = X.dot(W1) + b1
-    # ReLU
-    a1 = np.where(z1 > 0, z1, np.zeros(z1.shape))
+    a1 = np.where(z1 > 0, z1, np.zeros(z1.shape)) # ReLU
     z2 = a1.dot(W2) + b2
     scores = z2 # is not softmax
-    
     # If the targets are not given then jump out, we're done
     if y is None:
       return scores
 
     # Compute the loss
-    loss = None
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -97,8 +93,9 @@ class TwoLayerNet(object):
     z2_exp = np.exp(z2)
     z2_exp_sum = np.reshape(np.sum(z2_exp, axis = 1), (z2_exp.shape[0], 1))
     scores = z2_exp / z2_exp_sum
-    y_scores = scores[np.arange(scores.shape[0]), y]
-    loss = np.sum(-np.log(y_scores))/y_scores.shape[0] + reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+    y_score = scores[np.arange(scores.shape[0]), y]
+    y_score = np.reshape(y_score, (y_score.shape[0], 1))
+    loss = np.sum(-np.log(y_score))/y_score.shape[0] + reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     
     # Backward pass: compute gradients
     grads = {}
@@ -107,10 +104,27 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    dL_dS = np.reshape((-1 / y_scores) / N, (y_scores.shape[0], 1))
-    dL_da2 = dL_dS * np.where(scores == y, np.ones(scores.shape), np.zeros(scores.shape))
-    dl_dz2 = 
-
+	# 一些临时变量
+    y_exp = np.reshape(z2_exp[np.arange(z2_exp.shape[0]), y], (z2_exp.shape[0], 1))  # exp_z2的第y列的值
+    softmax_mask = np.where(scores == y_score, np.ones(scores.shape), np.zeros(scores.shape))
+    ReLU_mask = np.where(z1>0, np.ones(z1.shape), np.zeros(z1.shape))
+    # compute grad without reg
+    dL_dyscore = (-1/N) * 1/y_score                                                                       # softmax's loss funtion
+	# 下面这种注释后的算法实际上是工整的链式法则得到的算法，但其生成的高维数组很多数据和mask一乘以后全变成0，之前的计算结果都浪费了---低效
+    # dL_dscore = dL_dyscore * np.where(scores == y_score, np.ones(scores.shape), np.zeros(scores.shape))   # dL_dyscore * dyscore_dscore
+    # dL_dexpZ2 = dL_dscore * dscore_dexpZ2
+	# 此处决定直接计算dyscore_dexpZ2，即y_score所对应的那一列计算梯度
+    dL_dexpZ2 = dL_dyscore * ((softmax_mask*z2_exp_sum - y_exp)/(z2_exp_sum**2))  # dL_dyscore * dyscore_dexpZ2
+    dL_dZ2 = dL_dexpZ2 * z2_exp
+    dL_da1 = dL_dZ2.dot(W2.T)
+    dL_dZ1 = dL_da1 * ReLU_mask
+	
+	# Z2 = a1 * W2 + b2
+    grads['W2'] = dL_dW2 = a1.T.dot(dL_dZ2) + reg * 2 * W2
+    grads['b2'] = dL_db2 = np.sum(dL_dZ2*1, axis=0)
+    # Z1 = X * W1 + b1
+    grads['W1'] = dL_dW1 = X.T.dot(dL_dZ1) + reg * 2 * W1
+    grads['b1'] = dL_db1 = np.sum(dL_dZ1*1, axis=0)
     return loss, grads
 
   def train(self, X, y, X_val, y_val,
@@ -150,10 +164,9 @@ class TwoLayerNet(object):
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
-      pass
-      #########################################################################
-      #                             END OF YOUR CODE                          #
-      #########################################################################
+      mask = np.random.choice(num_train, batch_size, replace=True)
+      X_batch = X[mask]
+      y_batch = y[mask]
 
       # Compute loss and gradients using the current minibatch
       loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
@@ -165,11 +178,11 @@ class TwoLayerNet(object):
       # using stochastic gradient descent. You'll need to use the gradients   #
       # stored in the grads dictionary defined above.                         #
       #########################################################################
-      pass
-      #########################################################################
-      #                             END OF YOUR CODE                          #
-      #########################################################################
-
+      self.params['W1'] -= learning_rate * grads['W1']
+      self.params['b1'] -= learning_rate * grads['b1']
+      self.params['W2'] -= learning_rate * grads['W2']
+      self.params['b2'] -= learning_rate * grads['b2']
+	  
       if verbose and it % 100 == 0:
         print('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
@@ -210,10 +223,13 @@ class TwoLayerNet(object):
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                              END OF YOUR CODE                           #
-    ###########################################################################
+    z1 = X.dot(self.params['W1']) + self.params['b1']
+    a1 = np.where(z1 > 0, z1, np.zeros(z1.shape)) # ReLU
+    z2 = a1.dot(self.params['W2']) + self.params['b2']
+    z2_exp = np.exp(z2)
+    z2_exp_sum = np.reshape(np.sum(z2_exp, axis = 1), (z2_exp.shape[0], 1))
+    scores = z2_exp / z2_exp_sum
+    y_pred = np.argmax(scores, axis = 1)
 
     return y_pred
 
