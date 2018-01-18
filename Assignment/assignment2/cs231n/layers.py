@@ -25,10 +25,13 @@ def affine_forward(x, w, b):
     # TODO: Implement the affine forward pass. Store the result in out. You   #
     # will need to reshape the input into rows.                               #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    # compute the data size
+    data_len = 1
+    for i in x.shape[1:]:
+      data_len *= i
+	
+    x_vector = np.reshape(x, (x.shape[0], data_len))
+    out = x_vector.dot(w) + b
     cache = (x, w, b)
     return out, cache
 
@@ -53,10 +56,16 @@ def affine_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    data_len = 1
+    for i in x.shape[1:]:
+      data_len *= i
+    x_vector = np.reshape(x, (x.shape[0], data_len))
+	
+    dx = dout.dot(w.T)
+    dx = np.reshape(dx, x.shape)
+    dw = x_vector.T.dot(dout)
+    db = np.sum(dout, axis = 0)
+
     return dx, dw, db
 
 
@@ -75,10 +84,8 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    out = np.where(x>0, x, np.zeros(x.shape))
+	
     cache = x
     return out, cache
 
@@ -98,10 +105,8 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    dx = np.where(x>0, dout, np.zeros(x.shape))
+	
     return dx
 
 
@@ -557,3 +562,26 @@ def softmax_loss(x, y):
     dx[np.arange(N), y] -= 1
     dx /= N
     return loss, dx
+	
+def softmax_forward(x, y):
+    """	my softmax_forward """
+    exp_x = np.exp(x)
+    scores = exp_x / np.reshape(np.sum(exp_x, axis=1), (x.shape[0], 1))
+    cache = [x, y, scores]
+    return scores, cache
+	
+def softmax_backward(cache):
+    """	my softmax_backward """
+    x, y, scores = cache
+    mask = np.zeros(scores.shape)
+    mask[np.arange(scores.shape[0]), y] = 1
+    y_scores = np.reshape(scores[np.arange(scores.shape[0]), y], (x.shape[0], 1))
+    exp_x = np.exp(x)
+    exp_x_sum = np.reshape(np.sum(exp_x, axis=1), (x.shape[0], 1))
+    y_exp = np.reshape(exp_x[np.arange(x.shape[0]), y], (x.shape[0], 1))
+
+    dyscore = (-1/x.shape[0]) * (1/y_scores)
+    dexp_x = dyscore * ((mask*exp_x_sum - y_exp)/(exp_x_sum**2))
+    dx = dexp_x * exp_x
+    return dx
+    

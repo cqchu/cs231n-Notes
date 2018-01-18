@@ -38,7 +38,7 @@ def sgd(w, dw, config=None):
     - learning_rate: Scalar learning rate.
     """
     if config is None: config = {}
-    config.setdefault('learning_rate', 1e-2)
+    config.setdefault('learning_rate', 1e-3)
 
     w -= config['learning_rate'] * dw
     return w, config
