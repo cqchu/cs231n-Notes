@@ -224,11 +224,20 @@ def batchnorm_backward(dout, cache):
     dgamma = np.sum(dout * x_norm, axis = 0)
     dx_norm = dout * gamma
     
-	# backward : x_norm = v(x)/u(x), v(x) = x - mean(x), u(x) = sqrt(var(x)^2 + eps)
-	# dout/dx = dout/dx_norm * dx_norm/x = dout/dx_norm * (dx_norm/dvx * dvx/dx + dx_norm/dux * dux/dx)
-    dvx_dx = (1 - 1/x_norm.shape[0]) * np.ones(x_norm.shape)
-    dux_dx = ((x-x_mean) - np.sum(x-x_mean, axis=0)/x_norm.shape[0])/ np.sqrt(x_var + eps)
-    dx = dx_norm * (dvx_dx*np.sqrt(x_var+eps) - dux_dx*(x-x_mean)) / (x_var + eps)
+    # by computational graph
+    df_1 = dx_norm / np.sqrt(x_var + eps)
+    dg = np.sum(dx_norm * (x-x_mean), axis=0)
+    dh = -1 * dg / (x_var + eps)
+    dvar = dh / (2 * np.sqrt(x_var+eps))
+    dp = dvar / x.shape[0]
+    df_2 = 2 * (x-x_mean) * dp
+    df = df_1 + df_2
+	
+    dx_1 = df
+    du = np.sum(-df, axis = 0)
+    dx_2 = du * np.ones(x.shape) / x.shape[0]
+	
+    dx = dx_1 + dx_2
     
     return dx, dgamma, dbeta
 
