@@ -249,12 +249,15 @@ class FullyConnectedNet(object):
         affine_cache = {}
         relu_cache = {}
         bn_cache = {}
+        dropout_cache = {}
         x = X
         for i in range(self.num_layers)[1:]:
             x, affine_cache['%d'%(i)] = affine_forward(x, self.params['W%d'%(i)], self.params['b%d'%(i)])
             if self.use_batchnorm:
                 x, bn_cache['%d'%(i)] = batchnorm_forward(x, self.params['gamma%d'%(i)], self.params['beta%d'%(i)], self.bn_params[i-1])
             x, relu_cache['%d'%(i)] = relu_forward(x)
+            if self.use_dropout:
+                x, dropout_cache['%d'%(i)] = dropout_forward(x, self.dropout_param)
         x, affine_cache['%d'%(self.num_layers)] = affine_forward(x, self.params['W%d'%(self.num_layers)], self.params['b%d'%(self.num_layers)])
         scores, softmax_cache = softmax_forward(x, y)
 
@@ -285,13 +288,15 @@ class FullyConnectedNet(object):
 
 		# compute grads
         dz_L = softmax_backward(softmax_cache) 					# z_Last
-        da_ahead, grads['W%d'%(self.num_layers)], grads['b%d'%(self.num_layers)] = affine_backward(dz_L, affine_cache['%d'%(self.num_layers)])
+        dz, grads['W%d'%(self.num_layers)], grads['b%d'%(self.num_layers)] = affine_backward(dz_L, affine_cache['%d'%(self.num_layers)])
         grads['W%d'%(self.num_layers)] += self.reg * self.params['W%d'%(self.num_layers)]
         for i in range(self.num_layers)[::-1][:self.num_layers-1]:
-            dz = relu_backward(da_ahead, relu_cache['%d'%(i)])
+            if self.use_dropout:
+                dz = dropout_backward(dz, dropout_cache['%d'%(i)])
+            dz = relu_backward(dz, relu_cache['%d'%(i)])
             if self.use_batchnorm:
                 dz, grads['gamma%d'%(i)], grads['beta%d'%(i)] = batchnorm_backward(dz, bn_cache['%d'%(i)])
-            da_ahead, grads['W%d'%(i)], grads['b%d'%(i)] = affine_backward(dz, affine_cache['%d'%(i)])
+            dz, grads['W%d'%(i)], grads['b%d'%(i)] = affine_backward(dz, affine_cache['%d'%(i)])
             grads['W%d'%(i)] += self.reg * self.params['W%d'%(i)]
 
         return loss, grads
